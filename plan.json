@@ -1,0 +1,199 @@
+{
+  "projet": "SAE 4.02 — Reporting d'une analyse multivariée",
+  "universite": "Université Lumière Lyon 2",
+  "enseignant": "Adrien Guille",
+  "stack": {
+    "langage": "Python 3.12",
+    "interface": "Streamlit",
+    "librairies": ["pandas", "numpy", "scikit-learn", "prince", "plotly", "matplotlib", "seaborn"]
+  },
+  "fichiers": {
+    "app.py": "Point d'entrée Streamlit — 4 onglets",
+    "preprocessing.py": "Chargement, nettoyage, imputation ACP itérative régularisée",
+    "analysis.py": "ACP, ACM, AFC, CAH, k-moyennes",
+    "visualisation.py": "Graphiques Plotly (cercle corrélations, biplot, dendrogramme, coude)"
+  },
+  "branches": {
+    "main": "README, plan.json, structure globale",
+    "preprocessing": "preprocessing.py — nettoyage et imputation",
+    "analysis": "analysis.py — méthodes factorielles et classification",
+    "visualisation": "visualisation.py — graphiques",
+    "app": "app.py — intégration Streamlit"
+  },
+  "etapes": [
+    {
+      "id": 1,
+      "nom": "Préparation des données",
+      "branche": "preprocessing",
+      "fichier": "preprocessing.py",
+      "sous_etapes": [
+        {
+          "id": "1.1",
+          "nom": "Chargement générique",
+          "detail": "Lecture Excel ou CSV, détection automatique du format et des types (quanti/quali)"
+        },
+        {
+          "id": "1.2",
+          "nom": "Sélection des variables",
+          "detail": "Exclusion des colonnes metadata (url, dates, images), affichage du taux NaN par colonne"
+        },
+        {
+          "id": "1.3",
+          "nom": "Gestion des doublons",
+          "detail": "Dédoublonnage sur product_name + brands, conservation de la ligne la plus complète"
+        },
+        {
+          "id": "1.4",
+          "nom": "Gestion des valeurs aberrantes",
+          "detail": "Vérification des bornes physiques (valeurs /100g), winsorisation ou suppression"
+        },
+        {
+          "id": "1.5",
+          "nom": "Gestion des valeurs manquantes",
+          "detail": "Pipeline en 5 étapes : diagnostic → filtre colonnes (seuil_col) → filtre lignes (seuil_ligne) → imputation ACP itérative régularisée (quanti) → imputation mode/KNN (quali)",
+          "algorithme_imputation": {
+            "nom": "ACP itérative régularisée",
+            "reference": "Josse & Husson (2009), missMDA",
+            "etapes": [
+              "Initialisation par la moyenne",
+              "Boucle : ACP(S composantes) sur tableau complété",
+              "Imputation : X̂ = M + UDV' régularisé (d_s_reg = d_s - sigma²/d_s)",
+              "Mise à jour valeurs manquantes uniquement (masque R)",
+              "Convergence sur ||X^l - X^(l-1)||² < eps"
+            ],
+            "choix_S": "Validation croisée MSEP (Leave-one-out approché)",
+            "parametres": {
+              "seuil_col": {"defaut": 0.70, "description": "Taux NaN max pour conserver une colonne"},
+              "seuil_ligne": {"defaut": 0.50, "description": "Taux NaN max pour conserver une ligne"},
+              "ncp": {"defaut": "auto (CV)", "description": "Nombre de composantes ACP pour l'imputation"},
+              "n_iter_max": {"defaut": 1000, "description": "Nombre max d'itérations"},
+              "eps": {"defaut": 1e-6, "description": "Seuil de convergence"}
+            }
+          }
+        },
+        {
+          "id": "1.6",
+          "nom": "Recodage et création de variables",
+          "detail": "ultra_transforme (NOVA=4), nutriscore_num (A=1..E=5), discrétisation si besoin pour ACM"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "nom": "Pré-analyse",
+      "branche": "analysis",
+      "fichier": "analysis.py + visualisation.py",
+      "sous_etapes": [
+        {
+          "id": "2.1",
+          "nom": "Statistiques univariées",
+          "detail": "Moyenne, médiane, écart-type, quartiles (quanti) ; fréquences et proportions (quali)"
+        },
+        {
+          "id": "2.2",
+          "nom": "Statistiques bivariées",
+          "detail": "Matrice de corrélation, boxplots croisés Nutri-Score, scatter plots interactifs"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "nom": "Analyse factorielle et classification",
+      "branche": "analysis",
+      "fichier": "analysis.py",
+      "scenarios": [
+        {
+          "id": "S1",
+          "nom": "Profils nutritionnels",
+          "methodes": ["ACP", "CAH", "k-moyennes"],
+          "variables_actives": ["energy-kcal_100g", "fat_100g", "saturated-fat_100g", "sugars_100g", "fiber_100g", "proteins_100g", "salt_100g"],
+          "variables_illustratives": ["nutriscore_grade", "nova_group", "brands"],
+          "interpretation_metier": "Identifier des familles de céréales (sportives, ultra-sucrées, riches en fibres…)",
+          "outputs": [
+            "Cercle des corrélations",
+            "Biplot individus coloré par cluster",
+            "Dendrogramme CAH",
+            "Courbe du coude k-moyennes",
+            "Description des clusters (profil moyen par variable)"
+          ]
+        },
+        {
+          "id": "S2",
+          "nom": "Cohérence des scores",
+          "methodes": ["ACM"],
+          "variables_actives": ["nutriscore_grade", "nova_group", "environmental_score_grade"],
+          "variables_illustratives": ["labels_bio", "additives_n_cat", "brands"],
+          "interpretation_metier": "Un produit bon nutritionnellement est-il aussi bon pour l'environnement ?",
+          "outputs": [
+            "Graphe des modalités ACM",
+            "Graphe des individus ACM",
+            "% variance expliquée par axe"
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "nom": "Interface Streamlit",
+      "branche": "app",
+      "fichier": "app.py",
+      "onglets": [
+        {
+          "nom": "Données",
+          "contenu": "Upload fichier (Excel/CSV), aperçu, stats descriptives, diagnostic NaN, paramètres nettoyage"
+        },
+        {
+          "nom": "Pré-analyse",
+          "contenu": "Sélection variables, graphiques univariés et bivariés interactifs"
+        },
+        {
+          "nom": "Analyse factorielle",
+          "contenu": "Choix méthode (ACP/ACM/AFC), variables actives/illustratives, cercle corrélations, biplot, % variance"
+        },
+        {
+          "nom": "Classification",
+          "contenu": "Choix méthode (CAH/k-moyennes), dendrogramme, courbe du coude, clusters sur biplot"
+        }
+      ],
+      "exigences_genericite": [
+        "Aucun nom de colonne codé en dur",
+        "Détection automatique des types pour proposer les bonnes méthodes",
+        "Tous les paramètres ajustables via l'interface",
+        "Compatible avec tout sous-ensemble d'Open Food Facts"
+      ]
+    }
+  ],
+  "livrables": [
+    {
+      "nom": "Point intermédiaire IUT",
+      "echeance": "2026-06-08 15:30",
+      "description": "Résultats des 2 scénarios d'analyse prêts"
+    },
+    {
+      "nom": "Dossier PDF",
+      "echeance": "2026-06-22 17:30",
+      "format": "PDF ≤ 4 pages",
+      "plan": [
+        "Brève description des données",
+        "Scénarios d'analyse",
+        "Méthodologie, commentaire technique et lecture métier des résultats",
+        "Conclusion générale sur le marché"
+      ]
+    },
+    {
+      "nom": "Interface Streamlit",
+      "echeance": "2026-06-22 20:00",
+      "description": "Application fonctionnelle et générique déposée sur Moodle"
+    },
+    {
+      "nom": "Évaluation individuelle",
+      "echeance": "2026-06-24 08:00",
+      "description": "Épreuve sur table — lecture et interprétation de résultats factoriels"
+    },
+    {
+      "nom": "Soutenance",
+      "echeance": "2026-06-24 10:00",
+      "description": "Démo live avec fichier inconnu fourni par le prof"
+    }
+  ]
+}
