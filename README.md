@@ -44,7 +44,7 @@ L'objectif est de déchiffrer ce marché via des méthodes d'analyse multivarié
 | Module | Branche | Statut |
 |--------|---------|--------|
 | `preprocessing.py` | `preprocessing` | Terminé |
-| `analysis.py` | `analysis` | À faire |
+| `analysis.py` | `analysis` | Terminé |
 | `visualisation.py` | `visualisation` | À faire |
 | `app.py` | `app` | À faire |
 
@@ -124,6 +124,35 @@ Pipeline en 5 étapes (paramètres ajustables dans l'interface) :
 | 22 juin 20h00 | Interface Streamlit sur Moodle |
 | 24 juin 8h00 | Évaluation individuelle sur table |
 | 24 juin 10h00 | Soutenance + démonstration |
+
+---
+
+## analysis.py — Fonctions disponibles
+
+| Fonction | Méthode | Retourne |
+|----------|---------|---------|
+| `run_pca(df, active_cols, ...)` | ACP (sklearn) | scores, loadings (cercle corrélations), cos², contributions, éléments supplémentaires |
+| `run_mca(df, active_cols, ...)` | ACM (prince) | coords individus & modalités, inertie, cos², contributions |
+| `run_ca(df, col_row, col_col, ...)` | AFC (prince) | tableau de contingence, coords lignes & colonnes, inertie |
+| `run_hca(df, cols, ...)` | CAH (scipy Ward) | matrice de linkage, labels, nombre de clusters suggéré |
+| `run_kmeans(df, cols, k, ...)` | K-moyennes (sklearn) | labels, inertie, silhouette, centroïdes |
+| `elbow(df, cols, k_range)` | Méthode du coude | inertie + silhouette pour chaque k, meilleur k |
+| `describe_clusters(df, labels, ...)` | — | profil moyen par cluster (quanti + quali) |
+
+### Résultats scénario 1 — ACP + K-moyennes (k=7)
+
+| Cluster | Profil | Nutri-Score dominant |
+|---------|--------|----------------------|
+| 1 | Riches en fibres et protéines, peu sucrés | A (63%) |
+| 2 | Très sucrés, peu gras, peu de fibres | D (48%) |
+| 3 | Très riches en protéines, peu de glucides | A (49%) |
+| 4 | Gras, sucrés, caloriques | D–E (83%) |
+| 5 | Gras modéré, sucrés, caloriques | C–D (82%) |
+| 6 | Peu caloriques (produits réduits) | A–C (82%) |
+| 7 | Extrêmement salés (outliers) | E (100%) |
+
+### Résultats scénario 2 — ACM (inertie Dim1+Dim2 : 49.5 %)
+Axe 1 oppose les produits bons (Nutri-Score A, NOVA 1–2, Eco-Score A/A+) aux mauvais (Nutri-Score D–E, NOVA 4, Eco-Score D–F).
 
 ---
 

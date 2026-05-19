@@ -481,9 +481,10 @@ def recode_variables(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
 
     if "nova_group" in df.columns:
-        df["ultra_transforme"] = (
-            pd.to_numeric(df["nova_group"], errors="coerce") == 4
-        ).map({True: "oui", False: "non"})
+        # Arrondi + clip [1, 4] : nova_group peut être float après imputation ACP
+        nova_num = pd.to_numeric(df["nova_group"], errors="coerce").round().clip(1, 4).astype("Int64")
+        df["nova_group"] = nova_num.astype(str).replace("<NA>", np.nan)
+        df["ultra_transforme"] = (nova_num == 4).map({True: "oui", False: "non"})
 
     if "nutriscore_grade" in df.columns:
         grade_map = {"a": 1, "b": 2, "c": 3, "d": 4, "e": 5}
