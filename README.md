@@ -45,7 +45,7 @@ L'objectif est de déchiffrer ce marché via des méthodes d'analyse multivarié
 |--------|---------|--------|
 | `preprocessing.py` | `preprocessing` | Terminé |
 | `analysis.py` | `analysis` | Terminé |
-| `visualisation.py` | `visualisation` | À faire |
+| `visualisation.py` | `visualisation` | Terminé |
 | `app.py` | `app` | À faire |
 
 ---
@@ -124,6 +124,27 @@ Pipeline en 5 étapes (paramètres ajustables dans l'interface) :
 | 22 juin 20h00 | Interface Streamlit sur Moodle |
 | 24 juin 8h00 | Évaluation individuelle sur table |
 | 24 juin 10h00 | Soutenance + démonstration |
+
+---
+
+## visualisation.py — Fonctions disponibles
+
+| Fonction | Graphique |
+|----------|-----------|
+| `plot_missing_heatmap(missing_summary)` | Barplot horizontal du taux de NaN par colonne |
+| `plot_univariate(df, col)` | Histogramme (quanti) ou barplot (quali) |
+| `plot_correlation_matrix(df, cols)` | Heatmap de la matrice de corrélation |
+| `plot_boxplot(df, quanti_col, quali_col)` | Boxplot croisé quanti × quali |
+| `plot_scree(explained_var)` | Éboulis des valeurs propres + variance cumulée |
+| `plot_correlation_circle(loadings, ...)` | Cercle des corrélations (ACP) |
+| `plot_individuals(scores, ...)` | Graphe des individus coloré (ACP ou ACM) |
+| `plot_cos2_bar(cos2, dim)` | Barplot des cos² pour une dimension |
+| `plot_mca_modalities(col_coords, ...)` | Graphe des modalités coloré par variable (ACM) |
+| `plot_ca_biplot(row_coords, col_coords, ...)` | Biplot AFC (modalités lignes + colonnes) |
+| `plot_dendrogram(linkage_matrix)` | Dendrogramme (CAH) |
+| `plot_elbow(elbow_result)` | Courbe du coude — inertie + silhouette |
+| `plot_cluster_profile(quanti_profile)` | Radar chart des profils de clusters |
+| `plot_clusters_on_pca(scores, labels, ...)` | Clusters projetés sur le plan ACP |
 
 ---
 

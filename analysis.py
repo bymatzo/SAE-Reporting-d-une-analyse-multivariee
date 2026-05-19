@@ -292,7 +292,9 @@ def run_ca(
     row_coords = ca.row_coordinates(contingency)
     col_coords = ca.column_coordinates(contingency)
 
-    axis_labels = [f"Dim {i+1}" for i in range(n_components)]
+    # n_components réel peut être < n_components demandé (limité par min(nrows, ncols) - 1)
+    n_actual = row_coords.shape[1]
+    axis_labels = [f"Dim {i+1}" for i in range(n_actual)]
     row_coords.columns = axis_labels
     col_coords.columns = axis_labels
 
