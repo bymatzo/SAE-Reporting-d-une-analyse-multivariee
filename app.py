@@ -6,6 +6,7 @@ Reporting d'une analyse multivariée — Open Food Facts
 import sys
 sys.path.insert(0, ".")
 
+import io
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -91,39 +92,39 @@ def _run_preprocessing(filepath, seuil_col, seuil_ligne, ncp):
 
 @st.cache_data(show_spinner=False)
 def _run_pca(df_json, active_cols, sup_quali, n_components):
-    df = pd.read_json(df_json)
+    df = pd.read_json(io.StringIO(df_json))
     return run_pca(df, active_cols, supplementary_quali=sup_quali or None,
                    n_components=n_components)
 
 
 @st.cache_data(show_spinner=False)
 def _run_mca(df_json, active_cols, sup_cols, n_components):
-    df = pd.read_json(df_json)
+    df = pd.read_json(io.StringIO(df_json))
     return run_mca(df, active_cols, supplementary_cols=sup_cols or None,
                    n_components=n_components)
 
 
 @st.cache_data(show_spinner=False)
 def _run_ca(df_json, col_row, col_col):
-    df = pd.read_json(df_json)
+    df = pd.read_json(io.StringIO(df_json))
     return run_ca(df, col_row, col_col)
 
 
 @st.cache_data(show_spinner=False)
 def _run_elbow(df_json, cols, k_max):
-    df = pd.read_json(df_json)
+    df = pd.read_json(io.StringIO(df_json))
     return elbow(df, cols, k_range=range(2, k_max + 1))
 
 
 @st.cache_data(show_spinner=False)
 def _run_kmeans(df_json, cols, k):
-    df = pd.read_json(df_json)
+    df = pd.read_json(io.StringIO(df_json))
     return run_kmeans(df, cols, k=k)
 
 
 @st.cache_data(show_spinner=False)
 def _run_hca(df_json, cols):
-    df = pd.read_json(df_json)
+    df = pd.read_json(io.StringIO(df_json))
     return run_hca(df, cols)
 
 
