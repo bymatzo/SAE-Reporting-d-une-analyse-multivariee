@@ -46,7 +46,7 @@ L'objectif est de déchiffrer ce marché via des méthodes d'analyse multivarié
 | `preprocessing.py` | `preprocessing` | Terminé |
 | `analysis.py` | `analysis` | Terminé |
 | `visualisation.py` | `visualisation` | Terminé |
-| `app.py` | `app` | À faire |
+| `app.py` | `app` | Terminé |
 
 ---
 
