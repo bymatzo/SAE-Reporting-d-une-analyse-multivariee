@@ -205,6 +205,15 @@ with tab_data:
                 "Les traductions sont mises en cache localement pour les runs suivants."
             ),
         )
+        if st.session_state.get("df") is not None:
+            if st.button("🔍 Détecter toutes les colonnes multilingues du jeu actuel",
+                         help="Analyse toutes les colonnes texte et identifie celles à normaliser."):
+                with st.spinner("Analyse LLM en cours…"):
+                    from normalisation_llm import detect_multilingual_columns
+                    detected = detect_multilingual_columns(st.session_state["df"])
+                    st.session_state["llm_detected_cols"] = detected
+            if st.session_state.get("llm_detected_cols"):
+                st.info("Colonnes détectées : " + ", ".join(st.session_state["llm_detected_cols"]))
 
     if st.button("🚀 Lancer la préparation", type="primary",
                  disabled="tmp_path" not in st.session_state):
@@ -404,6 +413,20 @@ with tab_facto:
                             st.write(f"**{col_name}**")
                             st.dataframe(coords.round(3), use_container_width=True)
 
+                with st.expander("🤖 Interprétation automatique des axes (LLM)"):
+                    if st.button("Interpréter les axes ACP", key="btn_pca_interp"):
+                        from normalisation_llm import interpret_pca_axes
+                        with st.spinner("Interprétation en cours…"):
+                            interp = interpret_pca_axes(
+                                res["loadings"], res["explained_var"], n_axes=n_comp,
+                                context=st.session_state.get("filename", "données alimentaires"),
+                            )
+                            st.session_state["llm_pca_interp"] = interp
+                    interp = st.session_state.get("llm_pca_interp") or {}
+                    for dim, info in sorted(interp.items()):
+                        st.markdown(f"**{dim} — {info.get('name', '')}**")
+                        st.write(info.get("interpretation", ""))
+
         # ---- ACM ----
         elif methode == "ACM":
             with st.expander("⚙️ Paramètres ACM", expanded=True):
@@ -461,6 +484,20 @@ with tab_facto:
                         for col_name, coords in res["supplementary"]["quali"].items():
                             st.write(f"**{col_name}**")
                             st.dataframe(coords.round(3), use_container_width=True)
+
+                with st.expander("🤖 Interprétation automatique des axes (LLM)"):
+                    if st.button("Interpréter les axes ACM", key="btn_mca_interp"):
+                        from normalisation_llm import interpret_mca_axes
+                        with st.spinner("Interprétation en cours…"):
+                            interp = interpret_mca_axes(
+                                res["col_coords"], res["explained_var"], n_axes=n_comp,
+                                context=st.session_state.get("filename", "données alimentaires"),
+                            )
+                            st.session_state["llm_mca_interp"] = interp
+                    interp = st.session_state.get("llm_mca_interp") or {}
+                    for dim, info in sorted(interp.items()):
+                        st.markdown(f"**{dim} — {info.get('name', '')}**")
+                        st.write(info.get("interpretation", ""))
 
         # ---- AFC ----
         elif methode == "AFC":
@@ -583,6 +620,22 @@ with tab_classif:
                     for col_name, profile in desc["quali_profile"].items():
                         st.write(f"**{col_name} (%)**")
                         st.dataframe(profile, use_container_width=True)
+
+            with st.expander("🤖 Interprétation automatique des clusters (LLM)"):
+                if st.button("Interpréter les clusters", key="btn_cluster_interp"):
+                    from normalisation_llm import interpret_clusters
+                    with st.spinner("Interprétation en cours…"):
+                        interp = interpret_clusters(
+                            desc["quanti_profile"],
+                            quali_profile=desc.get("quali_profile"),
+                            cluster_sizes=desc.get("cluster_sizes"),
+                            context=st.session_state.get("filename", "produits alimentaires"),
+                        )
+                        st.session_state["llm_cluster_interp"] = interp
+                interp = st.session_state.get("llm_cluster_interp") or {}
+                for cid, info in sorted(interp.items(), key=lambda x: x[0]):
+                    st.markdown(f"**Cluster {cid} — {info.get('name', '')}**")
+                    st.write(info.get("description", ""))
 
             st.divider()
 
