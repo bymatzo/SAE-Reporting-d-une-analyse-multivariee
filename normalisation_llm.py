@@ -24,6 +24,10 @@ from dotenv import load_dotenv
 
 load_dotenv()  # charge ANTHROPIC_API_KEY depuis .env si présent
 
+
+class LLMUnavailableError(RuntimeError):
+    """Levée quand l'API Anthropic est inaccessible (crédits, clé, réseau)."""
+
 # ---------------------------------------------------------------------------
 # Cache disque
 # ---------------------------------------------------------------------------
@@ -144,12 +148,15 @@ def _call_llm(tokens: list[str], context: str, client: Anthropic) -> dict[str, s
         'Réponds avec : {"valeur_originale": "traduction_fr", ...}'
     )
 
-    resp = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=2048,
-        system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
-        messages=[{"role": "user", "content": user}],
-    )
+    try:
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=2048,
+            system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+            messages=[{"role": "user", "content": user}],
+        )
+    except Exception as e:
+        raise LLMUnavailableError(str(e)) from e
 
     raw = resp.content[0].text
     match = re.search(r"\{[\s\S]*\}", raw)
@@ -316,12 +323,15 @@ _INTERP_SYSTEM = (
 def _interp_call(user_prompt: str) -> str:
     """Appel LLM unique pour toutes les fonctions d'interprétation."""
     client = Anthropic()
-    resp = client.messages.create(
-        model="claude-haiku-4-5-20251001",
-        max_tokens=1500,
-        system=[{"type": "text", "text": _INTERP_SYSTEM, "cache_control": {"type": "ephemeral"}}],
-        messages=[{"role": "user", "content": user_prompt}],
-    )
+    try:
+        resp = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=1500,
+            system=[{"type": "text", "text": _INTERP_SYSTEM, "cache_control": {"type": "ephemeral"}}],
+            messages=[{"role": "user", "content": user_prompt}],
+        )
+    except Exception as e:
+        raise LLMUnavailableError(str(e)) from e
     return resp.content[0].text
 
 

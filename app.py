@@ -79,8 +79,12 @@ def _run_preprocessing(filepath, seuil_col, seuil_ligne, ncp, normalize_multilin
     if quali_miss:
         df, _ = impute_quali(df, quali_miss, quanti_cols=quanti_cols, method="mode")
     if normalize_multilingual:
-        from normalisation_llm import normalize_multilingual_columns
-        df = normalize_multilingual_columns(df, api_key=api_key or None)
+        from normalisation_llm import normalize_multilingual_columns, LLMUnavailableError
+        try:
+            df = normalize_multilingual_columns(df, api_key=api_key or None)
+        except LLMUnavailableError as e:
+            st.warning(f"⚠️ Normalisation multilingue ignorée — API indisponible : {e}")
+
     df = recode_variables(df)
     col_types = detect_column_types(df)
     rapport = {
@@ -415,13 +419,16 @@ with tab_facto:
 
                 with st.expander("🤖 Interprétation automatique des axes (LLM)"):
                     if st.button("Interpréter les axes ACP", key="btn_pca_interp"):
-                        from normalisation_llm import interpret_pca_axes
+                        from normalisation_llm import interpret_pca_axes, LLMUnavailableError
                         with st.spinner("Interprétation en cours…"):
-                            interp = interpret_pca_axes(
-                                res["loadings"], res["explained_var"], n_axes=n_comp,
-                                context=st.session_state.get("filename", "données alimentaires"),
-                            )
-                            st.session_state["llm_pca_interp"] = interp
+                            try:
+                                interp = interpret_pca_axes(
+                                    res["loadings"], res["explained_var"], n_axes=n_comp,
+                                    context=st.session_state.get("filename", "données alimentaires"),
+                                )
+                                st.session_state["llm_pca_interp"] = interp
+                            except LLMUnavailableError as e:
+                                st.error(f"API indisponible : {e}")
                     interp = st.session_state.get("llm_pca_interp") or {}
                     for dim, info in sorted(interp.items()):
                         st.markdown(f"**{dim} — {info.get('name', '')}**")
@@ -487,13 +494,16 @@ with tab_facto:
 
                 with st.expander("🤖 Interprétation automatique des axes (LLM)"):
                     if st.button("Interpréter les axes ACM", key="btn_mca_interp"):
-                        from normalisation_llm import interpret_mca_axes
+                        from normalisation_llm import interpret_mca_axes, LLMUnavailableError
                         with st.spinner("Interprétation en cours…"):
-                            interp = interpret_mca_axes(
-                                res["col_coords"], res["explained_var"], n_axes=n_comp,
-                                context=st.session_state.get("filename", "données alimentaires"),
-                            )
-                            st.session_state["llm_mca_interp"] = interp
+                            try:
+                                interp = interpret_mca_axes(
+                                    res["col_coords"], res["explained_var"], n_axes=n_comp,
+                                    context=st.session_state.get("filename", "données alimentaires"),
+                                )
+                                st.session_state["llm_mca_interp"] = interp
+                            except LLMUnavailableError as e:
+                                st.error(f"API indisponible : {e}")
                     interp = st.session_state.get("llm_mca_interp") or {}
                     for dim, info in sorted(interp.items()):
                         st.markdown(f"**{dim} — {info.get('name', '')}**")
@@ -623,15 +633,18 @@ with tab_classif:
 
             with st.expander("🤖 Interprétation automatique des clusters (LLM)"):
                 if st.button("Interpréter les clusters", key="btn_cluster_interp"):
-                    from normalisation_llm import interpret_clusters
+                    from normalisation_llm import interpret_clusters, LLMUnavailableError
                     with st.spinner("Interprétation en cours…"):
-                        interp = interpret_clusters(
-                            desc["quanti_profile"],
-                            quali_profile=desc.get("quali_profile"),
-                            cluster_sizes=desc.get("cluster_sizes"),
-                            context=st.session_state.get("filename", "produits alimentaires"),
-                        )
-                        st.session_state["llm_cluster_interp"] = interp
+                        try:
+                            interp = interpret_clusters(
+                                desc["quanti_profile"],
+                                quali_profile=desc.get("quali_profile"),
+                                cluster_sizes=desc.get("cluster_sizes"),
+                                context=st.session_state.get("filename", "produits alimentaires"),
+                            )
+                            st.session_state["llm_cluster_interp"] = interp
+                        except LLMUnavailableError as e:
+                            st.error(f"API indisponible : {e}")
                 interp = st.session_state.get("llm_cluster_interp") or {}
                 for cid, info in sorted(interp.items(), key=lambda x: x[0]):
                     st.markdown(f"**Cluster {cid} — {info.get('name', '')}**")
