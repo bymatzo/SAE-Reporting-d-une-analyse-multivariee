@@ -149,7 +149,6 @@ def _call_llm(tokens: list[str], context: str, client: Anthropic) -> dict[str, s
         max_tokens=2048,
         system=[{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user}],
-        betas=["prompt-caching-2024-07-31"],
     )
 
     raw = resp.content[0].text
@@ -322,7 +321,6 @@ def _interp_call(user_prompt: str) -> str:
         max_tokens=1500,
         system=[{"type": "text", "text": _INTERP_SYSTEM, "cache_control": {"type": "ephemeral"}}],
         messages=[{"role": "user", "content": user_prompt}],
-        betas=["prompt-caching-2024-07-31"],
     )
     return resp.content[0].text
 
