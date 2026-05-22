@@ -201,25 +201,17 @@ with tab_data:
             "🌍 Normaliser les colonnes multilingues (packaging, catégories, labels, pays, allergènes)",
             value=False,
             help=(
-                "Traduit en français les valeurs multilingues via Claude API. "
-                "Nécessite une clé API Anthropic. Les traductions sont mises en cache "
-                "localement (.llm_translation_cache.json) pour les runs suivants."
+                "Traduit en français les valeurs multilingues via Claude API (clé lue depuis .env). "
+                "Les traductions sont mises en cache localement pour les runs suivants."
             ),
         )
-        anthropic_key = ""
-        if normalize_ml:
-            anthropic_key = st.text_input(
-                "Clé API Anthropic",
-                type="password",
-                help="Laisser vide si la variable d'environnement ANTHROPIC_API_KEY est définie.",
-            )
 
     if st.button("🚀 Lancer la préparation", type="primary",
                  disabled="tmp_path" not in st.session_state):
         with st.spinner("Préparation en cours…"):
             df, rapport, col_types = _run_preprocessing(
                 st.session_state["tmp_path"], seuil_col, seuil_ligne, ncp_imp,
-                normalize_ml, anthropic_key,
+                normalize_ml, "",
             )
             st.session_state["df"] = df
             st.session_state["rapport"] = rapport

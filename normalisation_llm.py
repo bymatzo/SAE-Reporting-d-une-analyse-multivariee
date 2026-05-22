@@ -20,6 +20,9 @@ from pathlib import Path
 
 import pandas as pd
 from anthropic import Anthropic
+from dotenv import load_dotenv
+
+load_dotenv()  # charge ANTHROPIC_API_KEY depuis .env si présent
 
 # ---------------------------------------------------------------------------
 # Cache disque
