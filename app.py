@@ -61,7 +61,7 @@ _init_state()
 # ---------------------------------------------------------------------------
 
 @st.cache_data(show_spinner=False)
-def _run_preprocessing(filepath, seuil_col, seuil_ligne, ncp):
+def _run_preprocessing(filepath, seuil_col, seuil_ligne, ncp, normalize_multilingual, api_key):
     """Pipeline complet mis en cache par paramètres."""
     df_raw = load_data(filepath)
     df = df_raw.drop(columns=[c for c in METADATA_COLS if c in df_raw.columns])
@@ -78,6 +78,9 @@ def _run_preprocessing(filepath, seuil_col, seuil_ligne, ncp):
     quali_miss = [c for c in quali_cols if df[c].isnull().any()]
     if quali_miss:
         df, _ = impute_quali(df, quali_miss, quanti_cols=quanti_cols, method="mode")
+    if normalize_multilingual:
+        from normalisation_llm import normalize_multilingual_columns
+        df = normalize_multilingual_columns(df, api_key=api_key or None)
     df = recode_variables(df)
     col_types = detect_column_types(df)
     rapport = {
@@ -86,6 +89,7 @@ def _run_preprocessing(filepath, seuil_col, seuil_ligne, ncp):
         "duplicates_removed": n_dupl,
         "imputation": rapport_pca,
         "shape_final": df.shape,
+        "multilingual_normalized": normalize_multilingual,
     }
     return df, rapport, col_types
 
@@ -192,11 +196,30 @@ with tab_data:
                 help="Nombre de composantes utilisées par l'algorithme missMDA",
             )
 
+        st.divider()
+        normalize_ml = st.toggle(
+            "🌍 Normaliser les colonnes multilingues (packaging, catégories, labels, pays, allergènes)",
+            value=False,
+            help=(
+                "Traduit en français les valeurs multilingues via Claude API. "
+                "Nécessite une clé API Anthropic. Les traductions sont mises en cache "
+                "localement (.llm_translation_cache.json) pour les runs suivants."
+            ),
+        )
+        anthropic_key = ""
+        if normalize_ml:
+            anthropic_key = st.text_input(
+                "Clé API Anthropic",
+                type="password",
+                help="Laisser vide si la variable d'environnement ANTHROPIC_API_KEY est définie.",
+            )
+
     if st.button("🚀 Lancer la préparation", type="primary",
                  disabled="tmp_path" not in st.session_state):
         with st.spinner("Préparation en cours…"):
             df, rapport, col_types = _run_preprocessing(
-                st.session_state["tmp_path"], seuil_col, seuil_ligne, ncp_imp
+                st.session_state["tmp_path"], seuil_col, seuil_ligne, ncp_imp,
+                normalize_ml, anthropic_key,
             )
             st.session_state["df"] = df
             st.session_state["rapport"] = rapport

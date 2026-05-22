@@ -515,6 +515,8 @@ def preprocess(
     ncp: int = None,
     ncp_max: int = 5,
     extra_exclude_cols: list = None,
+    normalize_multilingual: bool = False,
+    anthropic_api_key: str = None,
 ) -> tuple[pd.DataFrame, dict]:
     """
     Pipeline complet de préparation des données.
@@ -597,7 +599,13 @@ def preprocess(
         )
         rapport["imputation_quali"] = rapport_quali
 
-    # 10. Recodage
+    # 10. Normalisation multilingue (optionnelle — requiert API Anthropic)
+    if normalize_multilingual:
+        from normalisation_llm import normalize_multilingual_columns
+        df = normalize_multilingual_columns(df, api_key=anthropic_api_key)
+        rapport["multilingual_normalized"] = True
+
+    # 11. Recodage
     df = recode_variables(df)
 
     rapport["shape_final"] = df.shape

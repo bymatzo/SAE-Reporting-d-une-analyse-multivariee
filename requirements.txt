@@ -6,3 +6,4 @@ prince
 plotly
 streamlit
 openpyxl
+anthropic
