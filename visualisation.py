@@ -46,16 +46,48 @@ def plot_missing_heatmap(missing_summary: pd.DataFrame) -> go.Figure:
 
 def plot_univariate(df: pd.DataFrame, col: str) -> go.Figure:
     """
-    Histogramme (variable quanti) ou barplot (variable quali).
+    - Variable quali          → barplot des fréquences
+    - Variable quanti discrète (≤ 20 valeurs uniques) → barplot trié par valeur
+    - Variable quanti continue → histogramme avec axe X cadré sur [p1, p99]
     """
+    series = df[col].dropna()
+
     if pd.api.types.is_numeric_dtype(df[col]):
-        fig = px.histogram(
-            df, x=col, nbins=40,
-            title=f"Distribution — {col}",
-            labels={col: col},
-            color_discrete_sequence=[PALETTE[0]],
-        )
-        fig.update_traces(marker_line_width=0.5, marker_line_color="white")
+        n_unique = series.nunique()
+
+        if n_unique <= 20:
+            # Discret : barplot ordonné par valeur numérique
+            counts = series.value_counts().sort_index()
+            fig = go.Figure(go.Bar(
+                x=counts.index.astype(str),
+                y=counts.values,
+                marker_color=PALETTE[0],
+                text=counts.values,
+                textposition="outside",
+            ))
+            fig.update_layout(
+                title=f"Distribution — {col}",
+                xaxis_title=col,
+                yaxis_title="Effectif",
+                bargap=0.15,
+                yaxis=dict(range=[0, counts.max() * 1.15]),
+            )
+        else:
+            # Continu : histogramme avec axe X serré sur [p1, p99]
+            lo = float(series.quantile(0.01))
+            hi = float(series.quantile(0.99))
+            if lo == hi:
+                lo, hi = float(series.min()), float(series.max())
+            fig = px.histogram(
+                df, x=col, nbins=40,
+                range_x=[lo, hi],
+                title=f"Distribution — {col}",
+                labels={col: col},
+                color_discrete_sequence=[PALETTE[0]],
+            )
+            fig.update_traces(marker_line_width=0.5, marker_line_color="white")
+            fig.update_layout(bargap=0.02)
+
     else:
         counts = df[col].value_counts().reset_index()
         counts.columns = [col, "count"]
@@ -64,7 +96,8 @@ def plot_univariate(df: pd.DataFrame, col: str) -> go.Figure:
             title=f"Fréquences — {col}",
             color_discrete_sequence=[PALETTE[1]],
         )
-    fig.update_layout(bargap=0.05)
+        fig.update_layout(bargap=0.05)
+
     return fig
 
 
@@ -199,8 +232,6 @@ def plot_correlation_circle(
             showlegend=False,
             hovertemplate=f"<b>{name}</b><br>{dx}: {lx[i]:.3f}<br>{dy}: {ly[i]:.3f}<extra></extra>",
         ))
-
-    pct = lambda d: f"{explained_var_val:.1f}%" if (explained_var_val := 0) == 1 else ""
 
     fig.update_layout(
         title=f"Cercle des corrélations ({dx} × {dy})",
